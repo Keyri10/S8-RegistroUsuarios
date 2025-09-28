@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # opcional: si quieres que el container DB ejecute SQL al init:
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: productsdb
+      BACKEND_PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    image: nginx:stable-alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
